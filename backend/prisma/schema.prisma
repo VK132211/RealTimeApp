@@ -16,38 +16,77 @@ model User {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  threads     Thread[]
+  threads Thread[]
+
+  replies   Reply[]
+  reactions ThreadReaction[]
 
   @@map("users")
 }
 
 model Category {
-  id          BigInt   @id @default(autoincrement())
-  slug        String   @unique
+  id          BigInt  @id @default(autoincrement())
+  slug        String  @unique
   name        String
   description String?
 
-  threads     Thread[]
+  threads Thread[]
 
   @@map("categories")
 }
 
 model Thread {
-  id            BigInt   @id @default(autoincrement())
+  id BigInt @id @default(autoincrement())
 
-  categoryId    BigInt   @map("category_id")
-  authorUserId  BigInt   @map("author_user_id")
+  categoryId   BigInt @map("category_id")
+  authorUserId BigInt @map("author_user_id")
 
-  title         String
-  body          String
+  title String
+  body  String
 
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  category      Category @relation(fields: [categoryId], references: [id])
-  author        User     @relation(fields: [authorUserId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+  author   User     @relation(fields: [authorUserId], references: [id])
+
+  replies   Reply[]
+  reactions ThreadReaction[]
 
   @@index([categoryId, createdAt(sort: Desc)], name: "idx_threads_category_created_at")
   @@map("threads")
 }
 
+model Reply {
+  id BigInt @id @default(autoincrement())
+
+  threadId     BigInt @map("thread_id")
+  authorUserId BigInt @map("author_user_id")
+
+  body String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt(sort: Asc)], name: "idx_replies_thread_created_at")
+  @@map("replies")
+}
+
+model ThreadReaction {
+  id BigInt @id @default(autoincrement())
+
+  threadId BigInt @map("thread_id")
+  userId   BigInt @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId], name: "uniq_thread_reaction")
+  @@index([threadId], name: "idx_thread_reactions_thread")
+  @@map("thread_reactions")
+}
