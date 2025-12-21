@@ -16,5 +16,38 @@ model User {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  threads     Thread[]
+
   @@map("users")
 }
+
+model Category {
+  id          BigInt   @id @default(autoincrement())
+  slug        String   @unique
+  name        String
+  description String?
+
+  threads     Thread[]
+
+  @@map("categories")
+}
+
+model Thread {
+  id            BigInt   @id @default(autoincrement())
+
+  categoryId    BigInt   @map("category_id")
+  authorUserId  BigInt   @map("author_user_id")
+
+  title         String
+  body          String
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  category      Category @relation(fields: [categoryId], references: [id])
+  author        User     @relation(fields: [authorUserId], references: [id])
+
+  @@index([categoryId, createdAt(sort: Desc)], name: "idx_threads_category_created_at")
+  @@map("threads")
+}
+

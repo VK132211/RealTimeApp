@@ -15,3 +15,6 @@ npm run dev (frontend & backend)
 - Monorepo with frontend & backend
 - Clerk-based authentication
 - Prisma ORM
+
+### References
+[prisma-orm](https://www.prisma.io/docs/getting-started/prisma-orm/quickstart/postgresql)
