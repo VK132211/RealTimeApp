@@ -21,11 +21,10 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   }
   logger.error(`${req.method} ${req.originalUrl} ----> ${status}-${message}`);
 
-  res.status(status).json({
+ res.status(err.status || 500).json({
     error: {
-      message,
-      status,
-      details,
+      message: err.message || "Internal Server Error",
+      status: err.status || 500,
     },
   });
   next();

@@ -37,3 +37,13 @@ export async function apiPatch<TBody, TResponse>(
   const response = await client.patch<{ data: TResponse }>(url, body, config);
   return response.data.data;
 }
+
+export async function apiPost<TBody, TResponse>(
+  client: AxiosInstance,
+  url: string,
+  body: TBody,
+  config?: AxiosRequestConfig
+): Promise<TResponse> {
+  const response = await client.post<{ data: TResponse }>(url, body, config);
+  return response.data.data;
+}

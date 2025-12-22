@@ -17,6 +17,7 @@ import {
   likeThreadOnce,
   listRepliesForThread,
 } from "../modules/threads/replies.repository.js";
+import { bigintToString } from "../lib/utils.js";
 export const threadsRouter = Router();
 
 const createdThreadSchema = z.object({
@@ -27,7 +28,7 @@ const createdThreadSchema = z.object({
 threadsRouter.get("/categories", async (_req, res, next) => {
   try {
     const extractListOfCategories = await listCategories();
-    res.json({ data: extractListOfCategories });
+    res.json({ data: bigintToString(extractListOfCategories) });
   } catch (error) {
     next(error);
   }
@@ -47,7 +48,7 @@ threadsRouter.post("/threads", async (req, res, next) => {
       title: parsedBody.title,
       body: parsedBody.body,
     });
-    res.status(201).json({ data: newlyCreatedThread });
+    res.status(201).json({ data: bigintToString(newlyCreatedThread) });
   } catch (error) {
     next(error);
   }
@@ -73,7 +74,7 @@ threadsRouter.get("/threads/:threadId", async (req, res, next) => {
   }
 });
 
-threadsRouter.get("threads", async (req, res, next) => {
+threadsRouter.get("/threads", async (req, res, next) => {
   try {
     const filter = parseThreadListFilter({
       page: req.query.page,
@@ -84,7 +85,7 @@ threadsRouter.get("threads", async (req, res, next) => {
     });
 
     const extractListOfThreads = await listThreads(filter);
-    res.json({ data: extractListOfThreads });
+    res.json({ data: bigintToString(extractListOfThreads) });
   } catch (error) {
     next(error);
   }
