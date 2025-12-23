@@ -18,6 +18,7 @@ import {
   listRepliesForThread,
 } from "../modules/threads/replies.repository.js";
 import { bigintToString } from "../lib/utils.js";
+import { createLikeNotification, createReplyNotification } from "../modules/notifications/notifications.service.js";
 export const threadsRouter = Router();
 
 const createdThreadSchema = z.object({
@@ -127,6 +128,10 @@ threadsRouter.post("/threads/:threadId/replies", async (req, res, next) => {
       body: bodyRaw,
     });
 
+    await createReplyNotification({
+      threadId,
+      actorUserId: profile.user.id,
+    });
     res.status(201).json({ data: bigintToString(reply) });
   } catch (error) {
     next(error);
@@ -169,6 +174,11 @@ threadsRouter.post("/threads/:threadId/like", async (req, res, next) => {
     await likeThreadOnce({
       threadId,
       userId: profile.user.id,
+    });
+
+    await createLikeNotification({
+      threadId,
+      actorUserId: profile.user.id,
     });
     res.status(204).send();
   } catch (error) {

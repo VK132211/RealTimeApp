@@ -21,6 +21,9 @@ model User {
   replies   Reply[]
   reactions ThreadReaction[]
 
+  notifications      Notification[] @relation("UserNotifications")
+  actedNotifications Notification[] @relation("ActorNotifications")
+
   @@map("users")
 }
 
@@ -52,6 +55,7 @@ model Thread {
 
   replies   Reply[]
   reactions ThreadReaction[]
+  notifications Notification[]
 
   @@index([categoryId, createdAt(sort: Desc)], name: "idx_threads_category_created_at")
   @@map("threads")
@@ -89,4 +93,29 @@ model ThreadReaction {
   @@unique([threadId, userId], name: "uniq_thread_reaction")
   @@index([threadId], name: "idx_thread_reactions_thread")
   @@map("thread_reactions")
+}
+
+enum NotificationType{
+  REPLY_ON_THREAD
+  LIKE_ON_THREAD
+}
+
+model Notification {
+  id BigInt @id @default(autoincrement())
+
+  userId BigInt @map("user_id")
+  actorUserID BigInt @map("actor_user_id")
+  threadId BigInt @map("thread_id")
+
+  type NotificationType
+
+  createdAt DateTime @default(now()) @map("created_at")
+  readAt DateTime? @map("read_at")
+
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor User @relation("ActorNotifications", fields: [actorUserID], references: [id], onDelete: Cascade)
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt], name:"idx_notifications_user_read")
+  @@map("notifications")
 }
