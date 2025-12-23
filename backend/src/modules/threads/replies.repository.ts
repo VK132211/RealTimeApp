@@ -3,7 +3,7 @@ import { BadRequestError } from "../../lib/errors.js";
 import { getThreadById } from "./threads.repository.js";
 
 export async function listRepliesForThread(threadId: bigint) {
-  if (!Number.isInteger(threadId) || threadId <= 0) {
+  if (threadId <= 0) {
     throw new BadRequestError("Invalid Thread ID");
   }
 
@@ -104,9 +104,9 @@ export async function removeThreadOnce(params: { threadId: bigint; userId: bigin
   });
 }
 
-export async function getThreadDetailsWithCount(params: { threadId: bigint, viewerUserId: bigint | null }) {
+export async function getThreadDetailsWithCount(params: { threadId: bigint; viewerUserId: bigint | null }) {
   const { threadId, viewerUserId } = params;
-  const thread = getThreadById(threadId);
+  const thread = await getThreadById(threadId);
   const likeCount = await prisma.threadReaction.count({
     where: {
       threadId: threadId,
@@ -125,7 +125,7 @@ export async function getThreadDetailsWithCount(params: { threadId: bigint, view
         userId: viewerUserId,
       },
     });
-    if (viewerLikeCount > 0) {6
+    if (viewerLikeCount > 0) {
       viewerHasLikedThisPostOrNot = true;
     }
   }

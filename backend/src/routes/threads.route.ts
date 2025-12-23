@@ -58,7 +58,7 @@ threadsRouter.get("/threads/:threadId", async (req, res, next) => {
   try {
     const threadId = BigInt(req.params.threadId);
 
-    if (!Number.isInteger(threadId) || threadId <= 0) {
+    if (threadId <= 0) {
       throw new BadRequestError("Invalid thread id");
     }
     const auth = getAuth(req);
@@ -68,7 +68,7 @@ threadsRouter.get("/threads/:threadId", async (req, res, next) => {
     const profile = await getUserFromClerk(auth.userId);
     const viewerUserId = profile.user.id;
     const thread = await getThreadDetailsWithCount({ threadId, viewerUserId });
-    res.json({ data: thread });
+    res.json({ data: bigintToString(thread) });
   } catch (error) {
     next(error);
   }
@@ -99,7 +99,7 @@ threadsRouter.get("/threads/:threadId/replies", async (req, res, next) => {
     }
     const threadId = BigInt(req.params.threadId);
     const replies = await listRepliesForThread(threadId);
-    res.json({ data: replies });
+    res.json({ data: bigintToString(replies) });
   } catch (error) {
     next(error);
   }
@@ -112,7 +112,7 @@ threadsRouter.post("/threads/:threadId/replies", async (req, res, next) => {
     }
 
     const threadId = BigInt(req.params.threadId);
-    if (!Number.isInteger(threadId) || threadId <= 0) {
+    if (threadId <= 0) {
       throw new BadRequestError("Invalid Thread ID");
     }
     const bodyRaw = typeof req.body?.body === "string" ? req.body.body : "";
@@ -127,7 +127,7 @@ threadsRouter.post("/threads/:threadId/replies", async (req, res, next) => {
       body: bodyRaw,
     });
 
-    res.status(201).json({ data: reply });
+    res.status(201).json({ data: bigintToString(reply) });
   } catch (error) {
     next(error);
   }
@@ -140,7 +140,7 @@ threadsRouter.delete("/replies/:replyId", async (req, res, next) => {
       throw new UnAuthorizedError("Unauthorized");
     }
     const replyId = BigInt(req.params.replyId);
-    if (!Number.isInteger(replyId) || replyId <= 0) {
+    if (replyId <= 0) {
       throw new BadRequestError("Invalid Reply ID");
     }
     const profile = await getUserFromClerk(auth.userId);
@@ -162,7 +162,7 @@ threadsRouter.post("/threads/:threadId/like", async (req, res, next) => {
       throw new UnAuthorizedError("Unauthorized");
     }
     const threadId = BigInt(req.params.threadId);
-    if (!Number.isInteger(threadId) || threadId <= 0) {
+    if (threadId <= 0) {
       throw new BadRequestError("Invalid Thread ID");
     }
     const profile = await getUserFromClerk(auth.userId);

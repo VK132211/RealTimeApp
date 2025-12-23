@@ -15,17 +15,21 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
-const optionalText = z
-  .string()
-  .transform((value) => value.trim())
-  .transform((value) => (value === "" ? undefined : value))
-  .optional();
+// const optionalText = z
+//   .string()
+//   .transform((value) => value.trim())
+//   .transform((value) => (value === "" ? undefined : value))
+//   .optional();
 
 const ProfileSchema = z.object({
-  displayName: optionalText,
-  handle: optionalText,
-  bio: optionalText,
-  avatarUrl: optionalText,
+  displayName: z.string().min(2, "Display name must be at least 2 characters").optional(),
+  handle: z
+    .string()
+    .regex(/^[a-z0-9_]+$/, "Handle must be lowercase and alphanumeric")
+    .min(3, "Handle must be at least 3 characters")
+    .optional(),
+  bio: z.string().max(160, "Bio must be under 160 characters").optional(),
+  avatarUrl: z.url("Avatar must be a valid URL").optional(),
 });
 
 type ProfileFormValues = z.infer<typeof ProfileSchema>;
@@ -54,6 +58,7 @@ export default function ProfilePage() {
       bio: "",
       avatarUrl: "",
     },
+    mode: "onChange",
   });
   async function onSubmit(values: ProfileFormValues) {
     try {
@@ -62,7 +67,7 @@ export default function ProfilePage() {
       if (values.displayName) payload.displayName = values.displayName;
       if (values.handle) payload.handle = values.handle.toLowerCase();
       if (values.bio) payload.bio = values.bio;
-      if (values.avatarUrl) payload.bio = values.avatarUrl;
+      if (values.avatarUrl) payload.avatarUrl = values.avatarUrl;
       if (!isLoaded || !isSignedIn) return;
 
       const apiResponse = await apiPatch<typeof payload, UserProfileResponse>(apiClient, "/api/me", payload);
@@ -130,7 +135,7 @@ export default function ProfilePage() {
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">Manage your profile information</p>
           </div>
-          {/* </div> */}
+
           <Card className="border-border/70 bg-card">
             <CardHeader className="pb-4">
               <div className="flex items-start gap-6">
@@ -139,11 +144,11 @@ export default function ProfilePage() {
                 </Avatar>
 
                 <div className="flex-1">
-                  <CardTitle className="text-2xl text-foreground">{displayNameValue || "Your displayName"}</CardTitle>
+                  <CardTitle className="text-2xl text-foreground">{displayNameValue || "Your display name"}</CardTitle>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span
                       className={cn(
-                        "rounded-full px-2 py-1 text-xs font-medium",
+                        "rounded-full px-3 py-1 text-xs font-medium",
                         handleValue ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"
                       )}
                     >
@@ -173,9 +178,13 @@ export default function ProfilePage() {
                       disabled={isLoading || isSaving}
                       className="border-border mt-2 bg-background/60 text-sm"
                     />
+
+                    {/* implement error state -> 1st task */}
+                    {form.formState.errors.displayName && (
+                      <p className="text-xs text-destructive mt-1">{form.formState.errors.displayName.message}</p>
+                    )}
                   </div>
-                  {/* </div> */}
-                  {/* <div className="grid gap-6 md:grid-cols-2"> */}
+
                   <div className="space-y-2">
                     <label htmlFor="handle" className="text-sm font-semibold text-foreground">
                       Handle
@@ -187,44 +196,55 @@ export default function ProfilePage() {
                       disabled={isLoading || isSaving}
                       className="border-border mt-2 bg-background/60 text-sm"
                     />
+
+                    {/* implement error state -> 1st task */}
+                    {form.formState.errors.handle && (
+                      <p className="text-xs text-destructive mt-1">{form.formState.errors.handle.message}</p>
+                    )}
                   </div>
-                  {/* </div> */}
-                  {/* <div className="grid gap-6 md:grid-cols-2"> */}
+
                   <div className="space-y-2">
                     <label htmlFor="bio" className="text-sm font-semibold text-foreground">
                       Bio
                     </label>
                     <Textarea
                       id="bio"
-                      placeholder="tell about yourself!"
-                      {...form.register("bio")}
+                      placeholder="Tell about yourself!!!"
                       rows={4}
+                      {...form.register("bio")}
                       disabled={isLoading || isSaving}
                       className="border-border mt-2 bg-background/60 text-sm"
                     />
+
+                    {/* implement error state -> 1st task */}
+                    {form.formState.errors.bio && (
+                      <p className="text-xs text-destructive mt-1">{form.formState.errors.bio.message}</p>
+                    )}
                   </div>
                 </div>
-                {/* </form> */}
-                {/* <div className="grid gap-6 md:grid-cols-2"> */}
                 <div className="space-y-2">
                   <label htmlFor="avatarUrl" className="text-sm font-semibold text-foreground">
-                    Avatar Url
+                    Avatar URL
                   </label>
                   <Input
                     id="avatarUrl"
-                    placeholder="abc.com"
+                    placeholder="http://abc.com"
                     {...form.register("avatarUrl")}
                     disabled={isLoading || isSaving}
                     className="border-border mt-2 bg-background/60 text-sm"
                   />
+
+                  {/* implement error state -> 1st task */}
+                  {form.formState.errors.avatarUrl && (
+                    <p className="text-xs text-destructive mt-1">{form.formState.errors.avatarUrl.message}</p>
+                  )}
                 </div>
-                {/* </div> */}
 
                 <CardFooter className="p-0">
                   <Button
                     type="submit"
-                    disabled={isLoading || isSaving}
-                    className="min-w-{150px} bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={!form.formState.isValid || isLoading || isSaving}
+                    className="min-w-[150px] bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <Save className="mr-2 w-4 h-4" />
                     {isSaving ? "Saving..." : "Save Changes"}
