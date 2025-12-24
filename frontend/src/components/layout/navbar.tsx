@@ -2,12 +2,63 @@
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { Bell, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, useAuth } from "@clerk/clerk-react";
+import { useSocket } from "@/hooks/use-socket";
+import { useNotificationCount } from "@/hooks/use-notification-count";
+import { apiGet, createBrowserApiClient } from "@/lib/api-client";
+import { toast } from "sonner";
+import { Notification } from "@/types/notifications";
 function NavBar() {
-  const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { getToken, userId } = useAuth();
+  const { socket } = useSocket();
+  const { unreadCount, setUnreadCount, incrementUnread } = useNotificationCount();
+
+  const apiClient = useMemo(() => createBrowserApiClient(getToken), [getToken]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadUnreadNotifications() {
+      if (!userId) {
+        if (isMounted) setUnreadCount(0);
+        return;
+      }
+      try {
+        const data = await apiGet<Notification[]>(apiClient, "/api/notifications?unreadOnly=true");
+
+        if (!isMounted) return;
+        console.log(data);
+        setUnreadCount(data.length);
+      } catch (error) {
+        if (!isMounted) return;
+        console.log("Error Occured");
+      }
+    }
+    loadUnreadNotifications();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    const handleNewNotification = (payload: Notification) => {
+      incrementUnread();
+      toast("New Notification", {
+        description:
+          payload.type === "REPLY_ON_THREAD"
+            ? `${payload.actor.handle ?? "Someone"} commented to you thread`
+            : `${payload.actor.handle ?? "Someone"} liked your thread`,
+      });
+    };
+    socket.on("notification:new", handleNewNotification);
+    return () => {
+      socket.off("notification:new", handleNewNotification);
+    };
+  }, [socket, incrementUnread]);
   const navItems = [
     { href: "/chat", label: "Chat", match: (p?: string | null) => p?.startsWith("chat") },
     { href: "/profile", label: "Profile", match: (p?: string | null) => p?.startsWith("profile") },
@@ -19,7 +70,9 @@ function NavBar() {
         key={item.href}
         href={item.href}
         className="flex items-center rounded-full px-3 py-2 text-sm font-medium transition-colors bg-primary/20 text-primary shadow-sm"
-      >{item.label}</Link>
+      >
+        {item.label}
+      </Link>
     );
   };
   return (

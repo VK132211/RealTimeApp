@@ -289,7 +289,7 @@ export default function ThreadDetailsPage() {
 
                       {isCommentAuthor && (
                         <AlertDialog>
-                          <AlertDialogTrigger>
+                          <AlertDialogTrigger asChild>
                             <Button variant={"ghost"} size={"sm"}>
                               <Trash2 className="w-5 h-5" />
                             </Button>

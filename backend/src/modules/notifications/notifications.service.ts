@@ -1,4 +1,5 @@
 import { prisma } from "../../db/prisma.js";
+import { bigintToString } from "../../lib/utils.js";
 import { getIo } from "../../realtime/io.js";
 
 export async function createReplyNotification(params: { threadId: bigint; actorUserId: bigint }) {
@@ -43,7 +44,7 @@ export async function createReplyNotification(params: { threadId: bigint; actorU
   //EMIT NOTIFICATION:NEW
   const io = getIo();
   if (io) {
-    io.to(`notifications:user:${authorUserId}`).emit("notification:new", fullRes);
+    io.to(`notifications:user:${authorUserId}`).emit("notification:new", bigintToString(fullRes));
   }
 }
 export async function createLikeNotification(params: { threadId: bigint; actorUserId: bigint }) {
@@ -89,7 +90,7 @@ export async function createLikeNotification(params: { threadId: bigint; actorUs
   //EMIT NOTIFICATION:NEW
   const io = getIo();
   if (io) {
-    io.to(`notifications:user:${authorUserId}`).emit("notification:new", fullRes);
+    io.to(`notifications:user:${authorUserId}`).emit("notification:new", bigintToString(fullRes));
   }
 }
 
