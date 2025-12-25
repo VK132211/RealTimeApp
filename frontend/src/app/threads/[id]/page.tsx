@@ -290,25 +290,28 @@ export default function ThreadDetailsPage() {
                       {isCommentAuthor && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant={"ghost"} size={"sm"}>
-                              <Trash2 className="w-5 h-5" />
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="w-5 h-5 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
+
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogTitle>Delete this comment?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete your account and remove your
-                                data from our servers.
+                                This action cannot be undone. This will permanently delete your comment.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
+
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+
                               <AlertDialogAction
                                 onClick={() => handleDeleteComment(Number(comment.id))}
                                 disabled={commentBeingDeletedId === Number(comment.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                Continue
+                                {commentBeingDeletedId === Number(comment.id) ? "Deleting..." : "Delete"}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
