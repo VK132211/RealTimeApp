@@ -1,52 +1,42 @@
 import { prisma } from "../../db/prisma.js";
 
 export async function listChatUsers(currentUserId: bigint) {
-  try {
-    const result = await prisma.user.findUniqueOrThrow({ where: { id: currentUserId } });
-    return result;
-  } catch (error) {
-    throw error;
-  }
+  const users = await prisma.user.findMany({
+    where: {
+      id: { not: currentUserId },
+    },
+    select: {
+      id: true,
+      displayName: true,
+      handle: true,
+      avatarUrl: true,
+    },
+    orderBy: [{ displayName: "asc" }, { handle: "asc" }],
+  });
+
+  return users.map((u) => ({
+    id: u.id, // JSON-safe
+    displayName: u.displayName ?? null,
+    handle: u.handle ?? null,
+    avatarUrl: u.avatarUrl ?? null,
+  }));
 }
 
 export async function listDirectMessages(params: { userId: bigint; otherUserId: bigint; limit: number }) {
   const { userId, otherUserId, limit } = params;
-  const result = await prisma.directMessage.findMany({
+  const setLimit = Math.min(Math.max(limit || 50, 1), 200);
+
+  const messages = await prisma.directMessage.findMany({
     where: {
-      senderId: userId,
-      recipientId: otherUserId,
+      OR: [
+        { senderId: userId, recipientId: otherUserId },
+        { senderId: otherUserId, recipientId: userId },
+      ],
     },
-    take: limit,
-  });
-  return result.reverse();
-}
-
-export async function createDirectMessage(params: {
-  senderUserId: bigint;
-  recipientUserId: bigint;
-  body?: string | null;
-  imageUrl?: string | null;
-}) {
-  const { senderUserId, recipientUserId } = params;
-  const rawBody = params?.body ?? "";
-  const trimmedBody = rawBody.trim();
-  const setImageUrl = params?.imageUrl ?? null;
-
-  if (!trimmedBody && !setImageUrl) {
-    throw new Error("Message body or image is required");
-  }
-
-  const result = await prisma.directMessage.create({
-    data: {
-      senderId: senderUserId,
-      recipientId: recipientUserId,
-      body: trimmedBody || null,
-      imageUrl: setImageUrl,
+    orderBy: {
+      createdAt: "desc",
     },
-  });
-
-  const fullRes = await prisma.directMessage.findUniqueOrThrow({
-    where: { id: result.id },
+    take: setLimit,
     select: {
       id: true,
       senderId: true,
@@ -70,5 +60,71 @@ export async function createDirectMessage(params: {
       },
     },
   });
-  return fullRes;
+
+  return messages.reverse().map((m) => ({
+    id: m.id,
+    senderUserId: m.senderId,
+    recipientUserId: m.recipientId,
+    body: m.body ?? null,
+    imageUrl: m.imageUrl ?? null,
+    createdAt: m.createdAt.toISOString(),
+    sender: m.sender,
+    recipient: m.recipient,
+  }));
+}
+
+export async function createDirectMessage(params: {
+  senderUserId: bigint;
+  recipientUserId: bigint;
+  body?: string | null;
+  imageUrl?: string | null;
+}) {
+  const rawBody = params.body ?? "";
+  const trimmedBody = rawBody.trim();
+
+  if (!trimmedBody && !params.imageUrl) {
+    throw new Error("Message body or image is required");
+  }
+
+  const dm = await prisma.directMessage.create({
+    data: {
+      senderId: params.senderUserId,
+      recipientId: params.recipientUserId,
+      body: trimmedBody || null,
+      imageUrl: params.imageUrl ?? null,
+    },
+    select: {
+      id: true,
+      senderId: true,
+      recipientId: true,
+      body: true,
+      imageUrl: true,
+      createdAt: true,
+      sender: {
+        select: {
+          displayName: true,
+          handle: true,
+          avatarUrl: true,
+        },
+      },
+      recipient: {
+        select: {
+          displayName: true,
+          handle: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  });
+
+  return {
+    id: dm.id,
+    senderUserId: dm.senderId,
+    recipientUserId: dm.recipientId,
+    body: dm.body ?? null,
+    imageUrl: dm.imageUrl ?? null,
+    createdAt: dm.createdAt.toISOString(),
+    sender: dm.sender,
+    recipient: dm.recipient,
+  };
 }

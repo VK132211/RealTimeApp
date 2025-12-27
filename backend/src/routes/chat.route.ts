@@ -44,7 +44,7 @@ chatRouter.get("/conversations/:otherUserId/messages", async (req, res, next) =>
       limit: limit || 50,
     });
 
-    res.json({ data: messages });
+    res.json({ data: bigintToString(messages) });
   } catch (err) {
     next(err);
   }
